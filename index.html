@@ -3,471 +3,568 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Smith: C语言逻辑拼图</title>
+    <title>Code Mosaic | C语言逻辑构建</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        /* --- 基础样式变量 (VS Code Theme) --- */
         :root {
-            --bg-main: #1e1e1e;
-            --bg-panel: #252526;
-            --bg-block: #333333;
-            --bg-block-hover: #3c3c3c;
-            --accent: #007acc;
-            --text-main: #d4d4d4;
-            --text-muted: #858585;
+            /* 现代霓虹配色 */
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
             
-            /* 语法高亮颜色 */
-            --syn-keyword: #c586c0; /* void, int, if, return */
-            --syn-control: #c586c0; /* for, while */
-            --syn-string: #ce9178;  /* "text" */
-            --syn-function: #dcdcaa; /* main, printf */
-            --syn-number: #b5cea8;   /* 0, 10 */
-            --syn-macro: #569cd6;   /* #include */
+            --text-white: #ffffff;
+            --text-gray: #a0a0a0;
             
-            --success: #4ec9b0;
-            --error: #f48771;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --accent-green: #00e676;
+            --accent-blue: #2979ff;
+            --accent-red: #ff1744;
+            
+            /* 代码高亮 (One Dark Pro 风格) */
+            --c-keyword: #c678dd;
+            --c-func: #61afef;
+            --c-string: #98c379;
+            --c-num: #d19a66;
+            --c-macro: #e5c07b;
         }
+
+        * { box-sizing: border-box; user-select: none; outline: none; }
 
         body {
             margin: 0;
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: 'Poppins', sans-serif;
+            background: #0f0c29;
+            background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+            color: var(--text-white);
             min-height: 100vh;
-            user-select: none; /* 防止选中文本干扰拖拽 */
-        }
-
-        /* --- 顶部导航 --- */
-        header {
-            width: 100%;
-            background-color: var(--bg-panel);
-            padding: 15px 0;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            border-bottom: 1px solid #3e3e42;
-        }
-
-        h1 { margin: 0; font-size: 1.2rem; color: var(--text-main); letter-spacing: 1px; }
-        .level-badge {
-            background-color: var(--accent);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-
-        /* --- 游戏主区域 --- */
-        .game-container {
-            width: 100%;
-            max-width: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
             padding: 20px;
-            flex-grow: 1;
+        }
+
+        /* 动态背景光斑 */
+        .ambient-light {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(118,75,162,0.4) 0%, rgba(0,0,0,0) 70%);
+            top: -100px;
+            left: -100px;
+            z-index: -1;
+            animation: float 10s infinite ease-in-out;
+        }
+        .ambient-light:nth-child(2) {
+            top: auto; bottom: -150px; left: auto; right: -100px;
+            background: radial-gradient(circle, rgba(102,126,234,0.3) 0%, rgba(0,0,0,0) 70%);
+            animation: float 15s infinite ease-in-out reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, 50px); }
+        }
+
+        /* 主卡片容器 */
+        .app-container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: var(--glass-shadow);
             display: flex;
             flex-direction: column;
+            gap: 25px;
+            position: relative;
+            transition: transform 0.3s;
+        }
+
+        /* 头部 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #fff, #a0a0a0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .level-badge {
+            background: rgba(0,0,0,0.3);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            border: 1px solid var(--glass-border);
+            color: var(--accent-blue);
+            font-weight: 600;
+            letter-spacing: 1px;
         }
 
         .instruction {
             text-align: center;
-            color: var(--text-muted);
-            margin-bottom: 20px;
-            font-size: 0.9rem;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.95rem;
+            margin-bottom: 10px;
         }
 
-        /* --- 代码块列表 --- */
+        /* 代码列表 */
         .code-list {
             list-style: none;
             padding: 0;
             margin: 0;
-            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 300px;
         }
 
         .code-block {
-            background-color: var(--bg-block);
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 4px;
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 16px 20px;
+            border-radius: 12px;
             cursor: grab;
             display: flex;
             align-items: center;
-            border-left: 3px solid transparent;
-            transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
+            font-family: 'Fira Code', monospace;
             font-size: 1rem;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
             position: relative;
+            overflow: hidden;
         }
 
+        /* 左侧装饰条 */
+        .code-block::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--accent-blue);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .code-block:hover::before { opacity: 1; }
+
         .code-block:hover {
-            background-color: var(--bg-block-hover);
-            border-left-color: var(--text-muted);
+            background: rgba(40, 40, 40, 0.8);
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border-color: rgba(255,255,255,0.2);
         }
 
         .code-block.dragging {
             opacity: 0.5;
-            transform: scale(0.98);
-            border: 1px dashed var(--accent);
+            transform: scale(0.95);
+            background: transparent;
+            border: 2px dashed var(--accent-blue);
+            box-shadow: none;
+            color: transparent;
+        }
+        .code-block.dragging * { visibility: hidden; } /* 隐藏拖动源的内容 */
+
+        /* 放置时的占位效果 */
+        .code-block.drag-over {
+            border-top: 2px solid var(--accent-blue);
+            margin-top: 5px;
         }
 
-        /* 成功/正确状态 */
-        .code-block.correct {
-            border-left-color: var(--success);
-            background-color: #1e2d24; /* 微绿背景 */
+        /* 缩进处理 */
+        .indent-0 { padding-left: 20px; }
+        .indent-1 { padding-left: 45px; } /* 增加缩进使其更明显 */
+        
+        /* 手柄图标 */
+        .drag-handle {
+            margin-right: 15px;
+            color: rgba(255,255,255,0.2);
+            cursor: grab;
+            transition: color 0.2s;
         }
+        .code-block:hover .drag-handle { color: rgba(255,255,255,0.6); }
 
-        /* 缩进辅助 */
-        .indent-1 { margin-left: 20px; }
-        .indent-2 { margin-left: 40px; }
+        /* 语法高亮 */
+        .kwd { color: var(--c-keyword); }
+        .func { color: var(--c-func); }
+        .str { color: var(--c-string); }
+        .num { color: var(--c-num); }
+        .macro { color: var(--c-macro); }
 
-        /* --- 语法高亮类 --- */
-        .kwd { color: var(--syn-keyword); }
-        .str { color: var(--syn-string); }
-        .func { color: var(--syn-function); }
-        .num { color: var(--syn-number); }
-        .macro { color: var(--syn-macro); }
-
-        /* --- 控制区 & 终端 --- */
-        .bottom-panel {
-            margin-top: auto;
-            width: 100%;
-        }
-
+        /* 终端窗口 */
         .terminal {
-            background-color: black;
-            border: 1px solid #3e3e42;
-            border-radius: 4px;
-            padding: 10px;
-            height: 100px; /* 固定高度 */
-            font-family: 'Consolas', monospace;
+            background: #1a1b26;
+            border-radius: 12px;
+            border: 1px solid #333;
+            overflow: hidden;
+            margin-top: auto;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .terminal-bar {
+            background: #24283b;
+            padding: 8px 12px;
+            display: flex;
+            gap: 6px;
+            border-bottom: 1px solid #333;
+        }
+
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot.red { background: #ff5f56; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #27c93f; }
+
+        .terminal-content {
+            padding: 15px;
+            height: 90px;
+            font-family: 'Fira Code', monospace;
             font-size: 0.85rem;
+            color: #a9b1d6;
             overflow-y: auto;
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
         }
 
-        .term-line { margin: 2px 0; }
-        .term-success { color: var(--success); }
-        .term-error { color: var(--error); }
-        .term-info { color: var(--text-muted); }
+        .term-success { color: var(--accent-green); }
+        .term-error { color: var(--accent-red); }
 
-        .buttons {
+        /* 按钮组 */
+        .controls {
             display: flex;
-            gap: 10px;
             justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
         }
 
-        button {
-            padding: 10px 24px;
+        .btn {
             border: none;
-            border-radius: 2px;
-            cursor: pointer;
-            font-family: inherit;
-            font-weight: bold;
+            padding: 14px 32px;
+            border-radius: 50px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
             font-size: 1rem;
-            transition: all 0.2s;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-run { background-color: var(--success); color: #1e1e1e; }
-        .btn-run:hover { filter: brightness(1.1); }
-
-        .btn-next { 
-            background-color: var(--accent); 
-            color: white; 
-            display: none; /* 默认隐藏 */
+        .btn-run {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
         }
-        .btn-next:hover { background-color: #0062a3; }
+        
+        .btn-run:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(118, 75, 162, 0.6);
+        }
 
-        /* --- 动画特效 --- */
+        .btn-next {
+            background: #11998e;
+            background: linear-gradient(to right, #11998e, #38ef7d);
+            color: white;
+            display: none;
+            box-shadow: 0 4px 15px rgba(56, 239, 125, 0.4);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-next:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(56, 239, 125, 0.6); }
+
+        /* 成功状态 Code Block */
+        .code-block.success-state {
+            background: rgba(0, 230, 118, 0.1);
+            border-color: var(--accent-green);
+        }
+        .code-block.success-state::before { background: var(--accent-green); opacity: 1; }
+
+        /* 动画 */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             20%, 60% { transform: translateX(-5px); }
             40%, 80% { transform: translateX(5px); }
         }
-        .shake { animation: shake 0.4s ease-in-out; }
+        .shake { animation: shake 0.4s ease-in-out; border-color: var(--accent-red); }
 
-        /* --- 胜利弹窗 --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
         }
-        .modal-overlay.active { opacity: 1; pointer-events: all; }
+
+        /* 胜利全屏弹窗 */
+        .victory-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 12, 41, 0.95);
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+            z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.5s;
+        }
+        .victory-modal.active { opacity: 1; pointer-events: all; }
         
-        .modal-content {
-            background: var(--bg-panel);
-            padding: 40px;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid var(--accent);
-            box-shadow: 0 0 20px rgba(0, 122, 204, 0.3);
-        }
-        .modal-content h2 { color: var(--success); margin-top: 0; }
+        .victory-content { text-align: center; animation: popIn 0.5s ease; }
+        .trophy { font-size: 5rem; color: #ffd700; margin-bottom: 20px; filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.5)); }
+        .victory-title { font-size: 2.5rem; margin: 0; background: linear-gradient(to right, #fff, #ccc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Code Smith <span class="level-badge" id="level-badge">Level 1</span></h1>
-    </header>
+    <div class="ambient-light"></div>
+    <div class="ambient-light"></div>
 
-    <div class="game-container">
-        <p class="instruction">💡 拖拽代码块，将其排列成合法的 C 语言程序。</p>
-        
+    <div class="app-container" id="app-box">
+        <header>
+            <div class="logo"><i class="fa-solid fa-code"></i> Code Mosaic</div>
+            <div class="level-badge" id="level-display">LEVEL 1 / 4</div>
+        </header>
+
+        <p class="instruction">拖动代码块，像拼图一样重构 C 语言程序逻辑。</p>
+
         <ul class="code-list" id="code-list">
             </ul>
 
-        <div class="bottom-panel">
-            <div class="terminal" id="terminal">
-                <div class="term-line term-info">> Waiting for compilation...</div>
+        <div class="terminal">
+            <div class="terminal-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
             </div>
-            <div class="buttons">
-                <button class="btn-run" onclick="checkSolution()">Compile & Run</button>
-                <button class="btn-next" id="btn-next" onclick="nextLevel()">Next Level >></button>
+            <div class="terminal-content" id="terminal-text">
+                > GCC Compiler ready... waiting for source code.
             </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-run" onclick="verifyCode()">
+                <i class="fa-solid fa-play"></i> Compile & Run
+            </button>
+            <button class="btn btn-next" id="btn-next" onclick="nextLevel()">
+                Next Challenge <i class="fa-solid fa-arrow-right"></i>
+            </button>
         </div>
     </div>
 
-    <div class="modal-overlay" id="win-modal">
-        <div class="modal-content">
-            <h2>🎉 通关!</h2>
-            <p>你已经完成了所有 C 语言逻辑挑战。</p>
-            <p style="color: #888; font-size: 0.9rem;">Logic verified.</p>
-            <br>
-            <button class="btn-run" onclick="location.reload()">再玩一次</button>
+    <div class="victory-modal" id="victory-modal">
+        <div class="victory-content">
+            <div class="trophy"><i class="fa-solid fa-trophy"></i></div>
+            <h1 class="victory-title">MISSION ACCOMPLISHED</h1>
+            <p style="color: #a0a0a0; margin-top: 10px; font-size: 1.1rem;">你的 C 语言逻辑无懈可击。</p>
+            <button class="btn btn-run" style="margin-top: 30px;" onclick="location.reload()">Replay Game</button>
         </div>
     </div>
 
     <script>
-        // --- 游戏数据 (Level Data) ---
-        // id: 唯一标识符，用于校验顺序 (1, 2, 3...)
-        // html: 显示的内容 (包含 HTML span 标签用于高亮)
-        // indent: 是否需要缩进样式 (0, 1, 2)
+        // --- 游戏核心数据 ---
         const levels = [
             {
-                id: 1,
-                name: "Hello World",
-                desc: "C 语言的起点",
+                title: "The Beginning",
+                indentPattern: [0, 0, 1, 1, 0], // 0=无缩进, 1=一级缩进
                 snippets: [
-                    { correctOrder: 1, indent: 0, html: '<span class="macro">#include</span> &lt;stdio.h&gt;' },
-                    { correctOrder: 2, indent: 0, html: '<span class="kwd">int</span> <span class="func">main</span>() {' },
-                    { correctOrder: 3, indent: 1, html: '<span class="func">printf</span>(<span class="str">"Hello, World!\\n"</span>);' },
-                    { correctOrder: 4, indent: 1, html: '<span class="kwd">return</span> <span class="num">0</span>;' },
-                    { correctOrder: 5, indent: 0, html: '}' }
+                    { id: 1, html: '<span class="macro">#include</span> &lt;stdio.h&gt;' },
+                    { id: 2, html: '<span class="kwd">int</span> <span class="func">main</span>() {' },
+                    { id: 3, html: '<span class="func">printf</span>(<span class="str">"Hello World\\n"</span>);' },
+                    { id: 4, html: '<span class="kwd">return</span> <span class="num">0</span>;' },
+                    { id: 5, html: '}' }
                 ],
-                successOutput: "Hello, World!"
+                output: "Hello World"
             },
             {
-                id: 2,
-                name: "Variables",
-                desc: "变量声明与运算顺序",
+                title: "Variables & Math",
+                indentPattern: [0, 1, 1, 1, 1, 0],
                 snippets: [
-                    { correctOrder: 1, indent: 0, html: '<span class="kwd">int</span> <span class="func">main</span>() {' },
-                    { correctOrder: 2, indent: 1, html: '<span class="kwd">int</span> width = <span class="num">5</span>;' },
-                    { correctOrder: 3, indent: 1, html: '<span class="kwd">int</span> height = <span class="num">10</span>;' },
-                    { correctOrder: 4, indent: 1, html: '<span class="kwd">int</span> area = width * height;' },
-                    { correctOrder: 5, indent: 1, html: '<span class="func">printf</span>(<span class="str">"Area: %d"</span>, area);' },
-                    { correctOrder: 6, indent: 0, html: '}' }
+                    { id: 1, html: '<span class="kwd">int</span> <span class="func">main</span>() {' },
+                    { id: 2, html: '<span class="kwd">int</span> a = <span class="num">5</span>;' },
+                    { id: 3, html: '<span class="kwd">int</span> b = <span class="num">10</span>;' },
+                    { id: 4, html: '<span class="kwd">int</span> sum = a + b;' },
+                    { id: 5, html: '<span class="func">printf</span>(<span class="str">"%d"</span>, sum);' },
+                    { id: 6, html: '}' }
                 ],
-                successOutput: "Area: 50"
+                output: "15"
             },
             {
-                id: 3,
-                name: "Conditionals",
-                desc: "If-Else 逻辑判断",
+                title: "Decision Making",
+                indentPattern: [0, 0, 1, 0, 1, 0],
                 snippets: [
-                    { correctOrder: 1, indent: 0, html: '<span class="kwd">int</span> score = <span class="num">85</span>;' },
-                    { correctOrder: 2, indent: 0, html: '<span class="kwd">if</span> (score >= <span class="num">60</span>) {' },
-                    { correctOrder: 3, indent: 1, html: '<span class="func">printf</span>(<span class="str">"Pass"</span>);' },
-                    { correctOrder: 4, indent: 0, html: '} <span class="kwd">else</span> {' },
-                    { correctOrder: 5, indent: 1, html: '<span class="func">printf</span>(<span class="str">"Fail"</span>);' },
-                    { correctOrder: 6, indent: 0, html: '}' }
+                    { id: 1, html: '<span class="kwd">int</span> hp = <span class="num">100</span>;' },
+                    { id: 2, html: '<span class="kwd">if</span> (hp > <span class="num">0</span>) {' },
+                    { id: 3, html: '<span class="func">printf</span>(<span class="str">"Alive"</span>);' },
+                    { id: 4, html: '} <span class="kwd">else</span> {' },
+                    { id: 5, html: '<span class="func">printf</span>(<span class="str">"Game Over"</span>);' },
+                    { id: 6, html: '}' }
                 ],
-                successOutput: "Pass"
+                output: "Alive"
             },
             {
-                id: 4,
-                name: "Loops",
-                desc: "For 循环结构",
+                title: "The Loop",
+                indentPattern: [0, 0, 1, 1, 0, 0],
                 snippets: [
-                    { correctOrder: 1, indent: 0, html: '<span class="kwd">int</span> sum = <span class="num">0</span>;' },
-                    { correctOrder: 2, indent: 0, html: '<span class="kwd">for</span>(<span class="kwd">int</span> i=<span class="num">1</span>; i<=<span class="num">3</span>; i++) {' },
-                    { correctOrder: 3, indent: 1, html: 'sum = sum + i;' },
-                    { correctOrder: 4, indent: 1, html: '<span class="func">printf</span>(<span class="str">"%d "</span>, i);' },
-                    { correctOrder: 5, indent: 0, html: '}' },
-                    { correctOrder: 6, indent: 0, html: '<span class="func">printf</span>(<span class="str">"Total: %d"</span>, sum);' }
+                    { id: 1, html: '<span class="kwd">int</span> i;' },
+                    { id: 2, html: '<span class="kwd">for</span>(i=<span class="num">0</span>; i<<span class="num">3</span>; i++) {' },
+                    { id: 3, html: '<span class="func">printf</span>(<span class="str">"%d "</span>, i);' },
+                    { id: 4, html: '}' }, // 循环结束
+                    { id: 5, html: '<span class="func">printf</span>(<span class="str">"Done"</span>);' },
+                    { id: 6, html: '<span class="kwd">return</span> <span class="num">0</span>;' }
                 ],
-                successOutput: "1 2 3 Total: 6"
+                output: "0 1 2 Done"
             }
         ];
 
-        // --- 游戏状态 ---
-        let currentLevelIdx = 0;
+        let currentIdx = 0;
         const listEl = document.getElementById('code-list');
-        const terminalEl = document.getElementById('terminal');
+        const termText = document.getElementById('terminal-text');
         const nextBtn = document.getElementById('btn-next');
-        
-        // --- 初始化 & 关卡加载 ---
-        function initGame() {
-            loadLevel(currentLevelIdx);
-        }
+        const appBox = document.getElementById('app-box');
 
         function loadLevel(idx) {
-            // 重置 UI
-            listEl.innerHTML = '';
-            terminalEl.innerHTML = '<div class="term-line term-info">> System ready. Load code...</div>';
+            currentIdx = idx;
+            document.getElementById('level-display').innerText = `LEVEL ${idx + 1}`;
             nextBtn.style.display = 'none';
-            document.getElementById('level-badge').innerText = `Level ${idx + 1}: ${levels[idx].name}`;
-            
-            // 获取当前关卡数据并打乱顺序
-            let data = levels[idx].snippets;
-            let shuffled = [...data].sort(() => Math.random() - 0.5);
+            termText.innerHTML = '> System initialized.<br>> Waiting for compilation...';
+            listEl.innerHTML = '';
 
-            // 渲染 DOM
-            shuffled.forEach(item => {
+            // 准备数据：合并HTML和缩进信息，然后打乱
+            const level = levels[idx];
+            let items = level.snippets.map((s, i) => ({
+                ...s,
+                indent: level.indentPattern[i]
+            }));
+
+            // 随机打乱 (Fisher-Yates)
+            for (let i = items.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [items[i], items[j]] = [items[j], items[i]];
+            }
+
+            // 渲染
+            items.forEach(item => {
                 const li = document.createElement('li');
-                li.className = 'code-block';
-                if(item.indent === 1) li.classList.add('indent-1');
-                if(item.indent === 2) li.classList.add('indent-2');
-                
+                // 初始渲染时，我们需要带上这个块“原本应该有”的缩进样式
+                // 注意：这里有一个逻辑技巧，为了视觉上的拼图感，我们可以先不给缩进，或者给所有的块一个默认样式
+                // 但为了更“所见即所得”，我们在这里给它加上正确的缩进类，让用户通过缩进提示来辅助排序
+                li.className = `code-block indent-${item.indent}`;
                 li.draggable = true;
-                li.innerHTML = item.html;
-                li.dataset.order = item.correctOrder; // 核心：存储正确顺序
-
-                // 绑定拖拽事件
-                addDragEvents(li);
+                li.dataset.id = item.id;
+                li.innerHTML = `<i class="fa-solid fa-grip-vertical drag-handle"></i> ${item.html}`;
+                
+                setupDrag(li);
                 listEl.appendChild(li);
             });
         }
 
-        // --- 拖拽逻辑 (Native API) ---
-        let dragSrcEl = null;
+        // --- 现代拖拽逻辑 ---
+        let dragSrc = null;
 
-        function addDragEvents(item) {
-            item.addEventListener('dragstart', function(e) {
-                dragSrcEl = this;
+        function setupDrag(el) {
+            el.addEventListener('dragstart', e => {
+                dragSrc = el;
+                el.classList.add('dragging');
                 e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/html', this.innerHTML);
-                this.classList.add('dragging');
+                e.dataTransfer.setData('text/html', el.innerHTML);
             });
 
-            item.addEventListener('dragend', function() {
-                this.classList.remove('dragging');
-                document.querySelectorAll('.code-block').forEach(el => el.classList.remove('drag-over'));
+            el.addEventListener('dragend', () => {
+                el.classList.remove('dragging');
+                document.querySelectorAll('.code-block').forEach(b => b.classList.remove('drag-over'));
             });
 
-            item.addEventListener('dragover', function(e) {
-                if (e.preventDefault) e.preventDefault(); // 必须
+            el.addEventListener('dragover', e => {
+                e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
-                return false;
+                el.classList.add('drag-over');
             });
 
-            item.addEventListener('dragenter', function() {
-                this.classList.add('drag-over');
+            el.addEventListener('dragleave', () => {
+                el.classList.remove('drag-over');
             });
 
-            item.addEventListener('dragleave', function() {
-                this.classList.remove('drag-over');
-            });
+            el.addEventListener('drop', e => {
+                e.stopPropagation();
+                el.classList.remove('drag-over');
+                if (dragSrc !== el) {
+                    // 交换 HTML 内容 (视觉)
+                    const srcHTML = dragSrc.innerHTML;
+                    dragSrc.innerHTML = el.innerHTML;
+                    el.innerHTML = srcHTML;
 
-            item.addEventListener('drop', function(e) {
-                if (e.stopPropagation) e.stopPropagation();
+                    // 交换 ID (逻辑)
+                    const srcId = dragSrc.dataset.id;
+                    dragSrc.dataset.id = el.dataset.id;
+                    el.dataset.id = srcId;
 
-                if (dragSrcEl !== this) {
-                    // 交换 HTML 内容
-                    const srcHTML = dragSrcEl.innerHTML;
-                    const tgtHTML = this.innerHTML;
-                    dragSrcEl.innerHTML = tgtHTML;
-                    this.innerHTML = srcHTML;
-
-                    // 交换 dataset.order
-                    const srcOrder = dragSrcEl.dataset.order;
-                    const tgtOrder = this.dataset.order;
-                    dragSrcEl.dataset.order = tgtOrder;
-                    this.dataset.order = srcOrder;
-
-                    // 交换 Indent 类名 (视觉上的缩进)
-                    const srcClass = dragSrcEl.className; // code-block indent-1 ...
-                    const tgtClass = this.className;
+                    // 交换 缩进样式 (视觉提示)
+                    // 获取两个元素当前的缩进 class
+                    const getIndent = (dom) => {
+                        if(dom.classList.contains('indent-1')) return 'indent-1';
+                        return 'indent-0';
+                    };
+                    const srcClass = getIndent(dragSrc);
+                    const tgtClass = getIndent(el);
                     
-                    // 简单的类名交换逻辑：重置为基础，再根据 dataset 判断 (更稳健)
-                    // 但为了简单，这里直接交换 class (除了 dragging/over 状态)
-                    dragSrcEl.className = tgtClass.replace('dragging', '').replace('drag-over', '');
-                    this.className = srcClass.replace('dragging', '').replace('drag-over', '');
+                    // 移除旧的
+                    dragSrc.classList.remove('indent-0', 'indent-1');
+                    el.classList.remove('indent-0', 'indent-1');
+                    
+                    // 添加对方的
+                    dragSrc.classList.add(tgtClass);
+                    el.classList.add(srcClass);
                 }
                 return false;
-            });
-            
-            // 简单的移动端点击交换支持 (Touch Support is hard in vanilla, using simplified click-swap)
-            item.addEventListener('click', function() {
-                const selected = document.querySelector('.code-block.dragging');
-                if(selected && selected !== this) {
-                     // Swap logic reuse could go here, but standard drag is preferred for desktop
-                }
             });
         }
 
         // --- 验证逻辑 ---
-        function checkSolution() {
+        function verifyCode() {
             const blocks = document.querySelectorAll('.code-block');
             let isCorrect = true;
-            let previousOrder = 0;
 
-            // 检查顺序是否为 1, 2, 3, 4...
-            blocks.forEach(block => {
-                const currentOrder = parseInt(block.dataset.order);
-                if (currentOrder !== previousOrder + 1) {
+            blocks.forEach((b, index) => {
+                if (parseInt(b.dataset.id) !== index + 1) {
                     isCorrect = false;
                 }
-                previousOrder = currentOrder;
             });
 
-            terminalEl.innerHTML = '<div class="term-line term-info">> gcc main.c -o app</div>';
+            termText.innerHTML = '> gcc main.c -o app<br>> Compiling...<br>';
 
             if (isCorrect) {
                 // 成功
                 setTimeout(() => {
-                    terminalEl.innerHTML += '<div class="term-line term-success">> Build Successful.</div>';
-                    terminalEl.innerHTML += `<div class="term-line">> Output: ${levels[currentLevelIdx].successOutput}</div>`;
-                    
-                    blocks.forEach(b => b.classList.add('correct'));
-                    nextBtn.style.display = 'block';
+                    termText.innerHTML += `<span class="term-success">> Build Successful!</span><br>> Output: ${levels[currentIdx].output}`;
+                    blocks.forEach(b => b.classList.add('success-state'));
+                    nextBtn.style.display = 'flex';
                 }, 600);
             } else {
                 // 失败
                 setTimeout(() => {
-                    terminalEl.innerHTML += '<div class="term-line term-error">> Error: Syntax error or logical sequence incorrect.</div>';
-                    terminalEl.innerHTML += '<div class="term-line term-error">> check lines...</div>';
-                    
-                    const container = document.querySelector('.game-container');
-                    container.classList.add('shake');
-                    setTimeout(() => container.classList.remove('shake'), 500);
+                    termText.innerHTML += `<span class="term-error">> Error: Syntax/Logical error detected.</span><br>> Please check sequence.`;
+                    appBox.classList.add('shake');
+                    setTimeout(() => appBox.classList.remove('shake'), 400);
                 }, 600);
             }
         }
 
         function nextLevel() {
-            currentLevelIdx++;
-            if (currentLevelIdx < levels.length) {
-                loadLevel(currentLevelIdx);
+            if (currentIdx + 1 < levels.length) {
+                loadLevel(currentIdx + 1);
             } else {
-                // 游戏通关
-                document.getElementById('win-modal').classList.add('active');
+                document.getElementById('victory-modal').classList.add('active');
             }
         }
 
-        // Start Game
-        initGame();
+        // 启动
+        loadLevel(0);
 
     </script>
 </body>
