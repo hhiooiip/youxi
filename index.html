@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Smith: C语言逻辑拼图</title>
+    <style>
+        /* --- 基础样式变量 (VS Code Theme) --- */
+        :root {
+            --bg-main: #1e1e1e;
+            --bg-panel: #252526;
+            --bg-block: #333333;
+            --bg-block-hover: #3c3c3c;
+            --accent: #007acc;
+            --text-main: #d4d4d4;
+            --text-muted: #858585;
+            
+            /* 语法高亮颜色 */
+            --syn-keyword: #c586c0; /* void, int, if, return */
+            --syn-control: #c586c0; /* for, while */
+            --syn-string: #ce9178;  /* "text" */
+            --syn-function: #dcdcaa; /* main, printf */
+            --syn-number: #b5cea8;   /* 0, 10 */
+            --syn-macro: #569cd6;   /* #include */
+            
+            --success: #4ec9b0;
+            --error: #f48771;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            user-select: none; /* 防止选中文本干扰拖拽 */
+        }
+
+        /* --- 顶部导航 --- */
+        header {
+            width: 100%;
+            background-color: var(--bg-panel);
+            padding: 15px 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-bottom: 1px solid #3e3e42;
+        }
+
+        h1 { margin: 0; font-size: 1.2rem; color: var(--text-main); letter-spacing: 1px; }
+        .level-badge {
+            background-color: var(--accent);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        /* --- 游戏主区域 --- */
+        .game-container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .instruction {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* --- 代码块列表 --- */
+        .code-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            position: relative;
+        }
+
+        .code-block {
+            background-color: var(--bg-block);
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            border-left: 3px solid transparent;
+            transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
+            font-size: 1rem;
+            position: relative;
+        }
+
+        .code-block:hover {
+            background-color: var(--bg-block-hover);
+            border-left-color: var(--text-muted);
+        }
+
+        .code-block.dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+            border: 1px dashed var(--accent);
+        }
+
+        /* 成功/正确状态 */
+        .code-block.correct {
+            border-left-color: var(--success);
+            background-color: #1e2d24; /* 微绿背景 */
+        }
+
+        /* 缩进辅助 */
+        .indent-1 { margin-left: 20px; }
+        .indent-2 { margin-left: 40px; }
+
+        /* --- 语法高亮类 --- */
+        .kwd { color: var(--syn-keyword); }
+        .str { color: var(--syn-string); }
+        .func { color: var(--syn-function); }
+        .num { color: var(--syn-number); }
+        .macro { color: var(--syn-macro); }
+
+        /* --- 控制区 & 终端 --- */
+        .bottom-panel {
+            margin-top: auto;
+            width: 100%;
+        }
+
+        .terminal {
+            background-color: black;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 10px;
+            height: 100px; /* 固定高度 */
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .term-line { margin: 2px 0; }
+        .term-success { color: var(--success); }
+        .term-error { color: var(--error); }
+        .term-info { color: var(--text-muted); }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-run { background-color: var(--success); color: #1e1e1e; }
+        .btn-run:hover { filter: brightness(1.1); }
+
+        .btn-next { 
+            background-color: var(--accent); 
+            color: white; 
+            display: none; /* 默认隐藏 */
+        }
+        .btn-next:hover { background-color: #0062a3; }
+
+        /* --- 动画特效 --- */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; }
+
+        /* --- 胜利弹窗 --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .modal-content {
+            background: var(--bg-panel);
+            padding: 40px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--accent);
+            box-shadow: 0 0 20px rgba(0, 122, 204, 0.3);
+        }
+        .modal-content h2 { color: var(--success); margin-top: 0; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Code Smith <span class="level-badge" id="level-badge">Level 1</span></h1>
+    </header>
+
+    <div class="game-container">
+        <p class="instruction">💡 拖拽代码块，将其排列成合法的 C 语言程序。</p>
+        
+        <ul class="code-list" id="code-list">
+            </ul>
+
+        <div class="bottom-panel">
+            <div class="terminal" id="terminal">
+                <div class="term-line term-info">> Waiting for compilation...</div>
+            </div>
+            <div class="buttons">
+                <button class="btn-run" onclick="checkSolution()">Compile & Run</button>
+                <button class="btn-next" id="btn-next" onclick="nextLevel()">Next Level >></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="win-modal">
+        <div class="modal-content">
+            <h2>🎉 通关!</h2>
+            <p>你已经完成了所有 C 语言逻辑挑战。</p>
+            <p style="color: #888; font-size: 0.9rem;">Logic verified.</p>
+            <br>
+            <button class="btn-run" onclick="location.reload()">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 游戏数据 (Level Data) ---
+        // id: 唯一标识符，用于校验顺序 (1, 2, 3...)
+        // html: 显示的内容 (包含 HTML span 标签用于高亮)
+        // indent: 是否需要缩进样式 (0, 1, 2)
+        const levels = [
+            {
+                id: 1,
+                name: "Hello World",
+                desc: "C 语言的起点",
+                snippets: [
+                    { correctOrder: 1, indent: 0, html: '<span class="macro">#include</span> &lt;stdio.h&gt;' },
+                    { correctOrder: 2, indent: 0, html: '<span class="kwd">int</span> <span class="func">main</span>() {' },
+                    { correctOrder: 3, indent: 1, html: '<span class="func">printf</span>(<span class="str">"Hello, World!\\n"</span>);' },
+                    { correctOrder: 4, indent: 1, html: '<span class="kwd">return</span> <span class="num">0</span>;' },
+                    { correctOrder: 5, indent: 0, html: '}' }
+                ],
+                successOutput: "Hello, World!"
+            },
+            {
+                id: 2,
+                name: "Variables",
+                desc: "变量声明与运算顺序",
+                snippets: [
+                    { correctOrder: 1, indent: 0, html: '<span class="kwd">int</span> <span class="func">main</span>() {' },
+                    { correctOrder: 2, indent: 1, html: '<span class="kwd">int</span> width = <span class="num">5</span>;' },
+                    { correctOrder: 3, indent: 1, html: '<span class="kwd">int</span> height = <span class="num">10</span>;' },
+                    { correctOrder: 4, indent: 1, html: '<span class="kwd">int</span> area = width * height;' },
+                    { correctOrder: 5, indent: 1, html: '<span class="func">printf</span>(<span class="str">"Area: %d"</span>, area);' },
+                    { correctOrder: 6, indent: 0, html: '}' }
+                ],
+                successOutput: "Area: 50"
+            },
+            {
+                id: 3,
+                name: "Conditionals",
+                desc: "If-Else 逻辑判断",
+                snippets: [
+                    { correctOrder: 1, indent: 0, html: '<span class="kwd">int</span> score = <span class="num">85</span>;' },
+                    { correctOrder: 2, indent: 0, html: '<span class="kwd">if</span> (score >= <span class="num">60</span>) {' },
+                    { correctOrder: 3, indent: 1, html: '<span class="func">printf</span>(<span class="str">"Pass"</span>);' },
+                    { correctOrder: 4, indent: 0, html: '} <span class="kwd">else</span> {' },
+                    { correctOrder: 5, indent: 1, html: '<span class="func">printf</span>(<span class="str">"Fail"</span>);' },
+                    { correctOrder: 6, indent: 0, html: '}' }
+                ],
+                successOutput: "Pass"
+            },
+            {
+                id: 4,
+                name: "Loops",
+                desc: "For 循环结构",
+                snippets: [
+                    { correctOrder: 1, indent: 0, html: '<span class="kwd">int</span> sum = <span class="num">0</span>;' },
+                    { correctOrder: 2, indent: 0, html: '<span class="kwd">for</span>(<span class="kwd">int</span> i=<span class="num">1</span>; i<=<span class="num">3</span>; i++) {' },
+                    { correctOrder: 3, indent: 1, html: 'sum = sum + i;' },
+                    { correctOrder: 4, indent: 1, html: '<span class="func">printf</span>(<span class="str">"%d "</span>, i);' },
+                    { correctOrder: 5, indent: 0, html: '}' },
+                    { correctOrder: 6, indent: 0, html: '<span class="func">printf</span>(<span class="str">"Total: %d"</span>, sum);' }
+                ],
+                successOutput: "1 2 3 Total: 6"
+            }
+        ];
+
+        // --- 游戏状态 ---
+        let currentLevelIdx = 0;
+        const listEl = document.getElementById('code-list');
+        const terminalEl = document.getElementById('terminal');
+        const nextBtn = document.getElementById('btn-next');
+        
+        // --- 初始化 & 关卡加载 ---
+        function initGame() {
+            loadLevel(currentLevelIdx);
+        }
+
+        function loadLevel(idx) {
+            // 重置 UI
+            listEl.innerHTML = '';
+            terminalEl.innerHTML = '<div class="term-line term-info">> System ready. Load code...</div>';
+            nextBtn.style.display = 'none';
+            document.getElementById('level-badge').innerText = `Level ${idx + 1}: ${levels[idx].name}`;
+            
+            // 获取当前关卡数据并打乱顺序
+            let data = levels[idx].snippets;
+            let shuffled = [...data].sort(() => Math.random() - 0.5);
+
+            // 渲染 DOM
+            shuffled.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'code-block';
+                if(item.indent === 1) li.classList.add('indent-1');
+                if(item.indent === 2) li.classList.add('indent-2');
+                
+                li.draggable = true;
+                li.innerHTML = item.html;
+                li.dataset.order = item.correctOrder; // 核心：存储正确顺序
+
+                // 绑定拖拽事件
+                addDragEvents(li);
+                listEl.appendChild(li);
+            });
+        }
+
+        // --- 拖拽逻辑 (Native API) ---
+        let dragSrcEl = null;
+
+        function addDragEvents(item) {
+            item.addEventListener('dragstart', function(e) {
+                dragSrcEl = this;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.innerHTML);
+                this.classList.add('dragging');
+            });
+
+            item.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                document.querySelectorAll('.code-block').forEach(el => el.classList.remove('drag-over'));
+            });
+
+            item.addEventListener('dragover', function(e) {
+                if (e.preventDefault) e.preventDefault(); // 必须
+                e.dataTransfer.dropEffect = 'move';
+                return false;
+            });
+
+            item.addEventListener('dragenter', function() {
+                this.classList.add('drag-over');
+            });
+
+            item.addEventListener('dragleave', function() {
+                this.classList.remove('drag-over');
+            });
+
+            item.addEventListener('drop', function(e) {
+                if (e.stopPropagation) e.stopPropagation();
+
+                if (dragSrcEl !== this) {
+                    // 交换 HTML 内容
+                    const srcHTML = dragSrcEl.innerHTML;
+                    const tgtHTML = this.innerHTML;
+                    dragSrcEl.innerHTML = tgtHTML;
+                    this.innerHTML = srcHTML;
+
+                    // 交换 dataset.order
+                    const srcOrder = dragSrcEl.dataset.order;
+                    const tgtOrder = this.dataset.order;
+                    dragSrcEl.dataset.order = tgtOrder;
+                    this.dataset.order = srcOrder;
+
+                    // 交换 Indent 类名 (视觉上的缩进)
+                    const srcClass = dragSrcEl.className; // code-block indent-1 ...
+                    const tgtClass = this.className;
+                    
+                    // 简单的类名交换逻辑：重置为基础，再根据 dataset 判断 (更稳健)
+                    // 但为了简单，这里直接交换 class (除了 dragging/over 状态)
+                    dragSrcEl.className = tgtClass.replace('dragging', '').replace('drag-over', '');
+                    this.className = srcClass.replace('dragging', '').replace('drag-over', '');
+                }
+                return false;
+            });
+            
+            // 简单的移动端点击交换支持 (Touch Support is hard in vanilla, using simplified click-swap)
+            item.addEventListener('click', function() {
+                const selected = document.querySelector('.code-block.dragging');
+                if(selected && selected !== this) {
+                     // Swap logic reuse could go here, but standard drag is preferred for desktop
+                }
+            });
+        }
+
+        // --- 验证逻辑 ---
+        function checkSolution() {
+            const blocks = document.querySelectorAll('.code-block');
+            let isCorrect = true;
+            let previousOrder = 0;
+
+            // 检查顺序是否为 1, 2, 3, 4...
+            blocks.forEach(block => {
+                const currentOrder = parseInt(block.dataset.order);
+                if (currentOrder !== previousOrder + 1) {
+                    isCorrect = false;
+                }
+                previousOrder = currentOrder;
+            });
+
+            terminalEl.innerHTML = '<div class="term-line term-info">> gcc main.c -o app</div>';
+
+            if (isCorrect) {
+                // 成功
+                setTimeout(() => {
+                    terminalEl.innerHTML += '<div class="term-line term-success">> Build Successful.</div>';
+                    terminalEl.innerHTML += `<div class="term-line">> Output: ${levels[currentLevelIdx].successOutput}</div>`;
+                    
+                    blocks.forEach(b => b.classList.add('correct'));
+                    nextBtn.style.display = 'block';
+                }, 600);
+            } else {
+                // 失败
+                setTimeout(() => {
+                    terminalEl.innerHTML += '<div class="term-line term-error">> Error: Syntax error or logical sequence incorrect.</div>';
+                    terminalEl.innerHTML += '<div class="term-line term-error">> check lines...</div>';
+                    
+                    const container = document.querySelector('.game-container');
+                    container.classList.add('shake');
+                    setTimeout(() => container.classList.remove('shake'), 500);
+                }, 600);
+            }
+        }
+
+        function nextLevel() {
+            currentLevelIdx++;
+            if (currentLevelIdx < levels.length) {
+                loadLevel(currentLevelIdx);
+            } else {
+                // 游戏通关
+                document.getElementById('win-modal').classList.add('active');
+            }
+        }
+
+        // Start Game
+        initGame();
+
+    </script>
+</body>
+</html>
